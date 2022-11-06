@@ -18,21 +18,34 @@
         :search="search" 
         :headers="headers"
         :loading="loading"
-        fixed-header
+        hide-default-footer
+        items-per-page="-1"
         dense
         :no-data-text="nDText"
         :no-results-text="rText"
         id="repo-table"
+        style="height:60vh;"
         class="overflow-y-auto pa-5"
-        style="{height: 60vh}"
         >
         <!-- tive que por stylo aqui pois o github pages não estava encontrando o CSS -->
         <template v-slot:item="row">
             <tr >
-                <td>
-                <v-btn elevation="3" icon color="blue" class='ma-1' outlined title="Acessar repositório" @click="gotoRepository(row.item.html_url)">
-                    <v-icon size="20" >fa-solid fa-link</v-icon>
-                </v-btn>
+                <td >
+                    <div class="d-flex flex-row">
+                        <v-btn elevation="3" icon color="blue" class='ma-1' small outlined title="Acessar repositório" @click="gotoRepository(row.item.html_url)">
+                            <v-icon size="15" >fa-solid fa-link</v-icon>
+                        </v-btn>
+                        <v-btn v-if="row.item.forks_count > 0 "  elevation="3" icon color="gray" small class='ma-1' outlined title="Fork" >
+                            <v-badge color="#71990b" :content="row.item.stargazers_count" overlap>
+                                <v-icon size="15">fa-solid fa-code-fork</v-icon>
+                            </v-badge>
+                        </v-btn>
+                        <v-btn v-if="row.item.stargazers_count > 0 " elevation="3" icon color="gray" small class='ma-1' outlined title="Stars">
+                            <v-badge color="#71990b" :content="row.item.stargazers_count" overlap>
+                                <v-icon size="15">fa-solid fa-star</v-icon>
+                            </v-badge>
+                        </v-btn>
+                    </div>
                 </td>
                 <td>{{row.item.name}}<br></td>
                 <td>{{row.item.description ? row.item.description : "sem descrição"}}</td>
@@ -40,7 +53,7 @@
                 <td>{{dateFormat(row.item.updated_at)}}</td>
                 <td>
                     <v-btn elevation="3" icon :color="getLanguageColor(row.item.language)" class='ma-1' outlined >
-                        <v-icon size="20" :color="getLanguageColor(row.item.language)" :title="row.item.language">{{getLenguageIcon(row.item.language)}}</v-icon>
+                        <v-icon size="20" :color="getLanguageColor(row.item.language)" :title="row.item.language ? row.item.language : 'não definido'">{{getLenguageIcon(row.item.language)}}</v-icon>
                     </v-btn>
                 </td>
             </tr>
@@ -55,7 +68,7 @@ import { format } from 'date-fns'
 export default {
     data: () => ({
         headers: [
-            { text: 'Endereço', value: 'html_url' },
+            { text: '', value: 'html_url' },
             { text: 'Nome', value: 'name' },
             { text: 'Descricao', value: 'description' },
             { text: 'Criado em:', value: 'created_at' },
@@ -69,11 +82,12 @@ export default {
         rText: "resultado não encontrado",
         nDText: "repositórios não encontrados",
         languageIcons: [
-            {language:"PHP",icon:'fa-brands fa-php',color:'#9607f5'},
+            {language:"PHP",icon:'fa-brands fa-php',color:'#600b99'},
             {language:"Java",icon:'fa-brands fa-java',color:'#f50737'},
             {language:"TypeScript",icon:'fa-brands fa-square-js',color:'#076ef5'},
             {language:"HTML",icon:'fa-brands fa-html5',color:'#d65109'},
             {language:"CSS",icon:'fa-brands fa-css3-alt',color:'#2204e0'},
+            {language:"Vue",icon:'fa-brands fa-vuejs',color:'#2d9c4b'},
         ],
     }),
     methods:{
@@ -90,7 +104,7 @@ export default {
             if(exists !== -1){
                 return this.languageIcons[exists].icon
             }
-            return 'fa-regular fa-file'
+            return 'fa-solid fa-code'
         },
         getLanguageColor(language){
             let exists = this.languageIcons.findIndex(x => x.language === language);
