@@ -1,7 +1,7 @@
 const { defineConfig } = require('@vue/cli-service')
 
 module.exports = defineConfig({
-  publicPath:'/github-api-desafio-pages',
+  publicPath:'/desafio-repositorio-github-page',
   transpileDependencies: [
     'vuetify'
   ]

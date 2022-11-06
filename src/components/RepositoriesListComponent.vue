@@ -1,17 +1,54 @@
 <template>
     <div>
-        <v-row class="px-5">
-            <v-text-field 
-                label="Repósitorio de:" 
-                v-model="user"
-                class="pa-5 "
-                @change="updateRepositories()"
-            />
-            <v-text-field 
-                label="Pesquisar:" 
-                v-model="search"
-                class="pa-5 pl-5"
-            />
+        <v-row class="px-5 pt-5">
+            <v-col cols="4" class="d-flex flex-row pl-5">
+                <v-avatar >
+                <img
+                    v-if="(profileImg !== '' )"
+                    :src="profileImg"
+                    :alt="user"
+                >
+                <v-icon color="red" size="45" v-else>fa-regular fa-circle-xmark</v-icon>
+                </v-avatar>
+                <v-text-field 
+                    label="Repósitorio de:" 
+                    v-model="user"
+                    class="pa-5 "
+                    @change="updateRepositories()"
+                />
+            </v-col>
+            <v-col class="pr-5">
+                <v-text-field 
+                    label="Pesquisar" 
+                    v-model="search"
+                />
+                <div class="d-flex flex-row">
+                    <v-checkbox
+                        v-model="disabled"
+                        label="Inativos"
+                        class="px-2"
+                        @change="updateRepositories()"
+                        ></v-checkbox>
+                        <v-checkbox
+                        v-model="archived"
+                        label="Arquivados"
+                        @change="updateRepositories()"
+                    ></v-checkbox>
+                    <v-select
+                        label="Linguagem Programação"
+                        hide-details="auto"
+                        v-model='language'
+                        item-text="language"
+                        item-value="language"
+                        :items="languageIcons"
+                        clearable
+                        class="pl-5"
+                        color="var(--primary)"
+                        :prepend-icon='languageIcons.icon'
+                        @change="updateRepositories()">
+                    </v-select>
+                </div>
+            </v-col>
         </v-row>
         <v-data-table
         :items="repositories"
@@ -19,7 +56,7 @@
         :headers="headers"
         :loading="loading"
         hide-default-footer
-        items-per-page="-1"
+        :items-per-page="-1"
         dense
         :no-data-text="nDText"
         :no-results-text="rText"
@@ -27,7 +64,6 @@
         style="height:60vh;"
         class="overflow-y-auto pa-5"
         >
-        <!-- tive que por stylo aqui pois o github pages não estava encontrando o CSS -->
         <template v-slot:item="row">
             <tr >
                 <td >
@@ -67,6 +103,7 @@ import getRepo from '../services/githubApi'
 import { format } from 'date-fns'
 export default {
     data: () => ({
+        //ui variables
         headers: [
             { text: '', value: 'html_url' },
             { text: 'Nome', value: 'name' },
@@ -75,9 +112,6 @@ export default {
             { text: 'Último commit:', value: 'updated_at' },
             { text: 'Linguagem', value: 'language' },
         ],
-        search:'',
-        repositories: [],
-        user:'pedrogomes30',
         loading:false,
         rText: "resultado não encontrado",
         nDText: "repositórios não encontrados",
@@ -85,10 +119,20 @@ export default {
             {language:"PHP",icon:'fa-brands fa-php',color:'#600b99'},
             {language:"Java",icon:'fa-brands fa-java',color:'#f50737'},
             {language:"TypeScript",icon:'fa-brands fa-square-js',color:'#076ef5'},
+            {language:"JavaScript",icon:'fa-brands fa-square-js',color:'#bec712'},
             {language:"HTML",icon:'fa-brands fa-html5',color:'#d65109'},
             {language:"CSS",icon:'fa-brands fa-css3-alt',color:'#2204e0'},
             {language:"Vue",icon:'fa-brands fa-vuejs',color:'#2d9c4b'},
         ],
+        //search filter variables
+        search:'',
+        disabled: false,
+        archived:false,
+        language:'',
+        //user case variables
+        repositories: [],
+        user:'pedrogomes30',//default
+        profileImg:'',
     }),
     methods:{
         //interface methods
@@ -120,11 +164,28 @@ export default {
             try{
                 var result = await getRepo(this.user)
                 this.repositories = result
+                var filtred;
+                this.profileImg = this.repositories[0].owner.avatar_url
+                //filters
+                if(this.language !== '' && typeof(this.language) !== 'object'){
+                    filtred = this.repositories.filter((repo)=>repo.language === this.language);
+                    this.repositories = filtred
+                }
+                if(this.disabled){
+                    filtred = this.repositories.filter((repo)=>repo.disabled === true);
+                    this.repositories = filtred.length === 0 ? []  : filtred
+                }
+                if(this.archived){
+                    filtred = this.repositories.filter((repo)=>repo.archived === true);
+                    this.repositories = filtred.length === 0 ? []  : filtred
+                }
             }catch(e){
                 this.rText = e.getmesasage
+                this.profileImg = ''
             }
+            console.log("REPO",this.repositories)
             this.loading = false
-        },
+        },   
     },
     async beforeMount() {
         await this.updateRepositories();
